@@ -11,19 +11,35 @@ html(lang="en")
             h1 Noom
         main 
             div#welcome
-                form 
-                    input(placeholder = "room name", required, ype = "text")
-                    button(type="submit") Enter Room
-                h4 Open Rooms:
-                ul
-            div#room
-                h3
-                ul
-                form#name
-                    input(placeholder="name", required, type="text")
-                    button(type="submit") Save
-                form#msg
-                    input(placeholder="message", required, type="text")
-                    button(type="submit") Send
+                form    
+                    input(placeholder="room name", required, type="text")
+                    button Enter room
+                ul#roomList
+            div#call
+                div#myStream
+                    table
+                        th
+                            video#myFace(autoplay,playsinline, width="400", height="400")
+                        th#peerFacespace
+                            video#peerFace(autoplay,playsinline, width="400", height="400")
+                    div 
+                        table
+                            th
+                                button#mute Mute
+                            th
+                                button#camera Turn Camera Off
+                            th 
+                                button#leave Leave
+                            th
+                                select#cameras
+                div#chat(style = "border : 1px solid #e9e9e9" )
+                    form    
+                        input(placeholder="write message", required, type="text")
+                        button Send
+                    ul#chatList
+                    
+
+
+                            
         script(src="/socket.io/socket.io.js") 
         script(src="/public/js/app.js") 

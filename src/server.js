@@ -1,6 +1,5 @@
 import http from "http";
-import { Server } from "socket.io";
-import { instrument } from "@socket.io/admin-ui";
+import SocketIO from "socket.io";
 import express from "express";
 
 const app = express();
@@ -13,16 +12,7 @@ app.get("/*",(req,res) => res.redirect("/"));
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-      origin: ["https://admin.socket.io"],
-      credentials: true,
-    },
-  });
-  
-  instrument(io, {
-    auth: false,
-  });
+const io = SocketIO(server);
 
 function countRoom(roomName) {
     return io.sockets.adapter.rooms.get(roomName)?.size;
@@ -43,51 +33,23 @@ function publicRooms() {
     return publicRooms;
 }
 
-  
-io.on("connection", (socket)  => {
-    socket["nickname"] = "Anon";
-    socket.onAny((event) => {
-        console.log(`Socket Event: ${event}`);
+io.on("connection", (socket) => {
+    socket.on("join_room", (roomName) => {
+    socket.join(roomName);
+    socket.to(roomName).emit("welcome");
     });
-    socket.on("enter_room", (roomName, done) => {
-        socket.join(roomName);
-        done();
-        socket.to(roomName).emit("welcome", socket.nickname, countRoom(roomName));
-        io.sockets.emit("room_change", publicRooms());
+    socket.on("offer", (offer, roomName) => {
+        socket.to(roomName).emit("offer", offer);
     });
-    socket.on("disconnecting", () => {
-        socket.rooms.forEach((room) =>
-            socket.to(room).emit("bye", socket.nickname, countRoom(room) - 1)
-        );
+    socket.on("answer", (answer, roomName) => {
+        socket.to(roomName).emit("answer", answer);
     });
-    socket.on("disconnect", () => {
-        io.sockets.emit("room_change", publicRooms());
+    socket.on("ice", (ice, roomName) => {
+        socket.to(roomName).emit("ice", ice);
     });
-    socket.on("new_message", (msg, room, done) => {
-        socket.to(room).emit("new_message", `${socket.nickname}: ${msg}`);
-        done();
+    socket.on("checkRoom",(roomName) => {
+        socket.emit("checkRoomRes",countRoom(roomName) !== 2) 
     });
-    socket.on("nickname", (nickname) => {socket["nickname"] = nickname});
 });
-
-// websocket 사용했을 때 연결 코드
-// const wss = new WebSocket.Server({ server });
-// const sockets = [];
-// wss.on("connection", (socket) => {
-//   sockets.push(socket);
-//   socket["nick"] = "Anonymous";
-//   socket.on("close", ()=>{console.log("Discount client")});
-//   socket.on("message", (msg) => {
-//     const message = JSON.parse(msg)
-//     switch(message.type){
-//         case "nick":
-//             socket["nick"] = message.payload;
-//             break;
-//         case "message":
-//             sockets.forEach((aSocket) => {aSocket.send(`${socket.nick} : ${message.payload}`)});
-//             break;
-//     }
-//   });
-// });
 
 server.listen(3000,handleListen);
